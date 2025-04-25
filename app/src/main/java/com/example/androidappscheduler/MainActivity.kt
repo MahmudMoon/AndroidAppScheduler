@@ -1,7 +1,11 @@
 package com.example.androidappscheduler
 
+import android.content.ActivityNotFoundException
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -9,6 +13,8 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.androidappscheduler.adapters.InstalledPackageAdapter
+
+private const val TAG = "MainActivity"
 
 class MainActivity : AppCompatActivity() {
     lateinit var installedPackageAdapter: InstalledPackageAdapter
@@ -24,7 +30,9 @@ class MainActivity : AppCompatActivity() {
             insets
         }
 
-        installedPackageAdapter = InstalledPackageAdapter(this, emptyList())
+        installedPackageAdapter = InstalledPackageAdapter(this, emptyList()) { packageName ->
+            launchApp(packageName)
+        }
 
         recyclerView = findViewById(R.id.installed_apps_recycler_view)
         recyclerView.layoutManager = LinearLayoutManager(this)
@@ -35,7 +43,9 @@ class MainActivity : AppCompatActivity() {
             for (packageName in it) {
                 println("Installed package: $packageName")
             }
-            installedPackageAdapter = InstalledPackageAdapter(this, it)
+            installedPackageAdapter = InstalledPackageAdapter(this, it) { packageName ->
+                launchApp(packageName)
+            }
             recyclerView.adapter = installedPackageAdapter
             installedPackageAdapter.notifyDataSetChanged()
         }
@@ -48,5 +58,35 @@ class MainActivity : AppCompatActivity() {
             packageManager.getLaunchIntentForPackage(it.packageName) != null
         }.map { it.packageName }
         return packageNames
+    }
+
+    fun launchApp(packageName: String) {
+        val packageManager: PackageManager = packageManager
+        val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
+        Log.d(TAG, "launchApp: $packageName")
+        Log.d(TAG, "launchApp: $launchIntent")
+        if (launchIntent != null) {
+            startActivity(launchIntent)
+        } else {
+            // The application does not exist or cannot be launched directly.
+            // Optionally, take the user to the Google Play Store to install the app.
+            try {
+                startActivity(
+                    Intent(
+                        Intent.ACTION_VIEW, Uri.parse(
+                            "market://details?id=$packageName"
+                        )
+                    )
+                )
+            } catch (anfe: ActivityNotFoundException) {
+                startActivity(
+                    Intent(
+                        Intent.ACTION_VIEW, Uri.parse(
+                            "https://play.google.com/store/apps/details?id=$packageName"
+                        )
+                    )
+                )
+            }
+        }
     }
 }
