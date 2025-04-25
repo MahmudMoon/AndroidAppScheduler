@@ -33,7 +33,6 @@ class InstalledPackageAdapter(
         holder.packageNameTextView.text = packageList[position]
         holder.itemView.setOnClickListener {
             packageClicked(packageList[position])
-            //launchApp(packageList[position])
         }
     }
 
