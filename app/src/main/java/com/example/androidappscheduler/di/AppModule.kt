@@ -2,6 +2,9 @@ package com.example.androidappscheduler.di
 
 import android.content.Context
 import android.content.pm.PackageManager
+import androidx.room.Room
+import com.example.androidappscheduler.dao.AlarmLauncherDao
+import com.example.androidappscheduler.db.AlarmLauncherDb
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -16,5 +19,21 @@ class AppModule {
     @Singleton
     fun providePackageManager(@ApplicationContext context: Context): PackageManager {
         return context.packageManager
+    }
+
+    @Singleton
+    @Provides
+    fun provideAlarmDatabase(@ApplicationContext context: Context): AlarmLauncherDb {
+        return Room.databaseBuilder(
+            context,
+            AlarmLauncherDb::class.java,
+            AlarmLauncherDb.DATABASE_NAME
+        ).build()
+    }
+
+    @Singleton
+    @Provides
+    fun provideAlarmLauncherDao(db: AlarmLauncherDb): AlarmLauncherDao {
+        return db.alarmDao()
     }
 }
