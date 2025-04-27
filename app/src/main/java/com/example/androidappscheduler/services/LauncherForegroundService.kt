@@ -13,12 +13,18 @@ import android.util.Log
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import com.example.androidappscheduler.R
+import com.example.androidappscheduler.dao.AlarmLauncherDao
+import com.example.androidappscheduler.data.InstalledAppRepository
 import com.example.androidappscheduler.utils.Constants
 import com.example.androidappscheduler.utils.Constants.getFromSP
 import com.example.androidappscheduler.utils.Constants.getLastNotificationID
 import com.example.androidappscheduler.utils.Constants.saveInSP
 import com.example.androidappscheduler.utils.Constants.saveLastNotificationID
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import kotlin.math.abs
 
@@ -33,10 +39,17 @@ class LauncherForegroundService: Service() {
     @Inject
     lateinit var _packageManager: PackageManager;
 
+    @Inject
+    lateinit var installedAppRepo: InstalledAppRepository
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
 
         val packageName = intent?.getStringExtra("packageName") ?: ""
         Log.d(TAG, "onStartCommand: Package Name: $packageName")
+
+        val alarmID = intent?.getIntExtra("alarmID", 0) ?: 0
+        Log.d(TAG, "onStartCommand: Alarm ID: $alarmID")
+
         var appName = packageName
 
         try {
@@ -74,6 +87,11 @@ class LauncherForegroundService: Service() {
             )
             handler.postDelayed({
                 launchApp(applicationContext, packageName)
+
+                CoroutineScope(Dispatchers.IO).launch {
+                   installedAppRepo.markAlarmAsLaunched(alarmID)
+                }
+
                 if(getLastNotificationID(applicationContext) == abs(packageName.hashCode())){
                     stopForegroundService(abs(packageName.hashCode()))
                 }

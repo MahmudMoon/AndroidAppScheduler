@@ -15,10 +15,13 @@ class AlarmReceiver : BroadcastReceiver() {
         Log.d(TAG, "onReceive: Alarm Triggered")
         if (context != null && intent != null) {
             val packageName = intent.getStringExtra("packageName") ?: ""
+            val alarmID = intent.getIntExtra("alarmID", 0)
             Log.d(TAG, "onReceive: Package Name: $packageName")
+
 
             val serviceIntent = Intent(context, LauncherForegroundService::class.java)
             serviceIntent.putExtra("packageName", packageName)
+            serviceIntent.putExtra("alarmID", alarmID)
 
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

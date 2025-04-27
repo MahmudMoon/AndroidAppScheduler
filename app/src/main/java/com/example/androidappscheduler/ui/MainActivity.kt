@@ -19,6 +19,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.asLiveData
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.androidappscheduler.R
@@ -62,7 +63,7 @@ class MainActivity : AppCompatActivity() {
         recyclerView.adapter = installedPackageAdapter
 
 
-        installedAppViewModel.installedAppListState.value.let {
+        installedAppViewModel.installedAppListState.asLiveData().observe(this){
             Log.d(TAG, "onCreate: $it")
             installedPackageAdapter = InstalledPackageAdapter(this, it) { packageName ->
                 //launchApp(packageName)
@@ -73,6 +74,18 @@ class MainActivity : AppCompatActivity() {
             installedPackageAdapter.notifyDataSetChanged()
         }
 
+        installedAppViewModel.successfullyStoredAlarm.asLiveData().observe(this){
+            Log.d(TAG, "onCreate: Successfully stored alarm: $it")
+            if (it) {
+                Toast.makeText(this, "Alarm set successfully", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "Failed to set alarm", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        installedAppViewModel.alarmListData.asLiveData().observe(this) {
+            Log.d(TAG, "onCreate: Alarm List Data: ${it.size}")
+        }
     }
 
     private fun openAlarmDialog(packageName: String) {
@@ -128,8 +141,9 @@ class MainActivity : AppCompatActivity() {
         // Set alarm for the package
         val alarmManager = getSystemService(ALARM_SERVICE) as AlarmManager
         Intent(this, AlarmReceiver::class.java).let { intent ->
+            val uniqueRequestCode = System.currentTimeMillis().hashCode()
             intent.putExtra("packageName", packageName)
-            val uniqueRequestCode = alarmTime.toInt()
+            intent.putExtra("alarmID", uniqueRequestCode)
 
             val pendingIntent = PendingIntent.getBroadcast(
                 this,
@@ -154,10 +168,20 @@ class MainActivity : AppCompatActivity() {
                 )
                 Toast.makeText(this, "Alarm set for $packageName", Toast.LENGTH_SHORT).show()
             }
-
+            installedAppViewModel.saveAlarm(uniqueRequestCode ,packageName, alarmTime)
             Log.d(TAG, "setAlarmForPackage: $packageName RequestCode: $uniqueRequestCode")
+
+            installedAppViewModel.getInstalledApps()
 
         }
 
     }
+
+    override fun onStart() {
+        super.onStart()
+        Log.d(TAG, "onStart: ")
+        installedAppViewModel.getInstalledApps()
+    }
+
+
 }

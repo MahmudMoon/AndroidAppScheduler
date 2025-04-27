@@ -1,22 +1,18 @@
 package com.example.androidappscheduler.adapters
 
-import android.content.ActivityNotFoundException
 import android.content.Context
-import android.content.Intent
-import android.content.pm.PackageManager
-import android.net.Uri
-import android.util.Log
+import android.view.View
+import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.TextView
-import androidx.core.content.ContextCompat.startActivity
+import androidx.core.graphics.toColorInt
 import androidx.recyclerview.widget.RecyclerView
 import com.example.androidappscheduler.R
-
-
-private const val TAG = "InstalledPackageAdapter"
+import com.example.androidappscheduler.models.PackageInstance
 
 class InstalledPackageAdapter(
     private val context: Context,
-    private val packageList: List<String>,
+    private val packageInstances: List<PackageInstance>,
     private val packageClicked: (String) -> Unit
 ) : RecyclerView.Adapter<InstalledPackageAdapter.PackageViewHolder>() {
 
@@ -30,18 +26,29 @@ class InstalledPackageAdapter(
     }
 
     override fun onBindViewHolder(holder: PackageViewHolder, position: Int) {
-        holder.packageNameTextView.text = packageList[position]
+        holder.packageNameTextView.text = packageInstances[position].appName
         holder.itemView.setOnClickListener {
-            packageClicked(packageList[position])
+            packageClicked(packageInstances[position].packageName)
         }
+        var color = 0;
+        if(packageInstances[position].alarms.isNotEmpty()) {
+            holder.alarmImage.visibility = View.VISIBLE
+            color = "#056b11".toColorInt()
+        } else {
+            holder.alarmImage.visibility = View.INVISIBLE
+            color = "#000000".toColorInt()
+        }
+        holder.packageNameTextView.setTextColor(color)
     }
 
     override fun getItemCount(): Int {
-        return packageList.size
+        return packageInstances.size
     }
 
 
     class PackageViewHolder(itemView: android.view.View) : RecyclerView.ViewHolder(itemView) {
         val packageNameTextView: TextView = itemView.findViewById(R.id.app_name)
+        val alarmImage : ImageView = itemView.findViewById(R.id.iv_alarm_clock)
+        val rightArrow : ImageButton = itemView.findViewById(R.id.ib_right_arrow)
     }
 }
