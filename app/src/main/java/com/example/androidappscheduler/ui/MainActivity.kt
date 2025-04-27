@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.AlarmManager
 import android.app.ComponentCaller
 import android.app.PendingIntent
+import android.app.TimePickerDialog
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
@@ -12,6 +13,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.RequiresApi
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -24,6 +26,7 @@ import com.example.androidappscheduler.adapters.InstalledPackageAdapter
 import com.example.androidappscheduler.receiver.AlarmReceiver
 import com.example.androidappscheduler.viewmodels.InstalledAppViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import java.util.Calendar
 import java.util.Random
 import javax.inject.Inject
 
@@ -51,7 +54,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         installedPackageAdapter = InstalledPackageAdapter(this, emptyList()) { packageName ->
-            setAlarmForPackage(packageName)
+            openAlarmDialog(packageName)
         }
 
         recyclerView = findViewById(R.id.installed_apps_recycler_view)
@@ -63,12 +66,36 @@ class MainActivity : AppCompatActivity() {
             Log.d(TAG, "onCreate: $it")
             installedPackageAdapter = InstalledPackageAdapter(this, it) { packageName ->
                 //launchApp(packageName)
-                setAlarmForPackage(packageName)
+                //setAlarmForPackage(packageName)
+                openAlarmDialog(packageName)
             }
             recyclerView.adapter = installedPackageAdapter
             installedPackageAdapter.notifyDataSetChanged()
         }
 
+    }
+
+    private fun openAlarmDialog(packageName: String) {
+        val calendar = Calendar.getInstance()
+        val hour = calendar.get(Calendar.HOUR_OF_DAY)
+        val minute = calendar.get(Calendar.MINUTE)
+
+        TimePickerDialog(this, { _, selectedHour, selectedMinute ->
+            calendar.set(Calendar.HOUR_OF_DAY, selectedHour)
+            calendar.set(Calendar.MINUTE, selectedMinute)
+
+            AlertDialog.Builder(this).apply {
+                setTitle("Set Alarm for $packageName")
+                setMessage("Do you want to set an alarm for $packageName at ${selectedHour}:${String.format("%02d", selectedMinute)}?")
+                setPositiveButton("Yes") { _, _ ->
+                    setAlarmForPackage(packageName, calendar.timeInMillis)
+                }
+                setNegativeButton("No") { dialog, _ ->
+                    dialog.dismiss()
+                }
+                show()
+            }
+        }, hour, minute, true).show()
     }
 
     @RequiresApi(Build.VERSION_CODES.S)
@@ -97,13 +124,11 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun setAlarmForPackage(packageName: String) {
+    private fun setAlarmForPackage(packageName: String, alarmTime: Long) {
         // Set alarm for the package
         val alarmManager = getSystemService(ALARM_SERVICE) as AlarmManager
         Intent(this, AlarmReceiver::class.java).let { intent ->
             intent.putExtra("packageName", packageName)
-            val alarmTime = System.currentTimeMillis() + 60000 * 2 // 2 minute from now
-
             val uniqueRequestCode = alarmTime.toInt()
 
             val pendingIntent = PendingIntent.getBroadcast(
