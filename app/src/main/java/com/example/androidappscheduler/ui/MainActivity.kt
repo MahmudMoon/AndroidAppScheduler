@@ -102,7 +102,7 @@ class MainActivity : AppCompatActivity() {
         val alarmManager = getSystemService(ALARM_SERVICE) as AlarmManager
         Intent(this, AlarmReceiver::class.java).let { intent ->
             intent.putExtra("packageName", packageName)
-            val alarmTime = System.currentTimeMillis() + 60000 * 2 // 2 minute from now
+            val alarmTime = System.currentTimeMillis() + 60000 * 1 // 1 minute from now
 
             val uniqueRequestCode = alarmTime.toInt()
 

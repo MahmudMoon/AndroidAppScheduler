@@ -1,5 +1,6 @@
 package com.example.androidappscheduler.di
 
+import android.app.NotificationManager
 import android.content.Context
 import android.content.pm.PackageManager
 import dagger.Module
@@ -16,5 +17,11 @@ class AppModule {
     @Singleton
     fun providePackageManager(@ApplicationContext context: Context): PackageManager {
         return context.packageManager
+    }
+
+    @Singleton
+    @Provides
+    fun provideNotificationManager(@ApplicationContext context: Context): NotificationManager {
+        return context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
     }
 }

@@ -5,10 +5,14 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.widget.Toast
+import androidx.core.content.ContextCompat
+import androidx.core.content.ContextCompat.startForegroundService
+import com.example.androidappscheduler.services.LauncherForegroundService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -22,56 +26,20 @@ class AlarmReceiver : BroadcastReceiver() {
         if (context != null && intent != null) {
             val packageName = intent.getStringExtra("packageName") ?: ""
             Log.d(TAG, "onReceive: Package Name: $packageName")
-            if (packageName.isNotEmpty()) {
 
-                var randomDelay = System.currentTimeMillis() + 10000;
-                val handler = Handler(Looper.getMainLooper())
-
-                val lastLaunchTime = getFromSP(context);
-
-                randomDelay = maxOf(randomDelay, lastLaunchTime + 10000)
-
-                saveInSP(context, randomDelay);
+            val serviceIntent = Intent(context, LauncherForegroundService::class.java)
+            serviceIntent.putExtra("packageName", packageName)
 
 
-                Log.d(TAG, "onReceive: Current Time" + System.currentTimeMillis())
-                Log.d(TAG, "onReceive: Scheduled Time: " + randomDelay);
-                Log.d(TAG, "onReceive: Last launched Scheduled " + lastLaunchTime)
-                Log.d(TAG, "onReceive: =============================================")
-                Log.d(TAG, "onReceive: Diffence from now: ${(randomDelay - System.currentTimeMillis())/1000}")
-                handler.postDelayed({
-                    launchApp(context, packageName)
-                }, randomDelay - System.currentTimeMillis())
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(context, serviceIntent)
+            } else {
+                context.startService(serviceIntent);
+            }
 
-            } else
-                Log.d(TAG, "onReceive: Package Name is empty")
         } else {
             Log.d(TAG, "onReceive: Context or Intent is null")
         }
     }
 
-    private fun launchApp(context: Context, packageName: String) {
-        val packageManager: PackageManager = context.packageManager
-        val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
-        Log.d(TAG, "launchApp: $packageName")
-        Log.d(TAG, "launchApp: $launchIntent")
-        launchIntent?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        if (launchIntent != null) {
-            context.startActivity(launchIntent)
-        } else {
-            Toast.makeText(context, "Application not found", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    fun saveInSP(context: Context, randomDelay: Long) {
-        context.getSharedPreferences("alarm_delay_sp", Context.MODE_PRIVATE).edit().let {
-            it.putLong("lastLaunchTime", randomDelay)
-            it.apply()
-        }
-    }
-
-    fun getFromSP(context: Context): Long {
-        return context.getSharedPreferences("alarm_delay_sp", Context.MODE_PRIVATE)
-            .getLong("lastLaunchTime", 0L)
-    }
 }
