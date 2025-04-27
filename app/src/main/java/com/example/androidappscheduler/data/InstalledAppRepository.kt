@@ -1,15 +1,21 @@
 package com.example.androidappscheduler.data
 
 import android.content.pm.PackageManager
+import android.util.Log
 import com.example.androidappscheduler.dao.AlarmLauncherDao
 import com.example.androidappscheduler.entries.AlarmLauncher
 import com.example.androidappscheduler.models.PackageInstance
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+private const val TAG = "InstalledAppRepository"
+
 
 class InstalledAppRepository @Inject constructor(
     private val packageManager: PackageManager,
@@ -31,6 +37,7 @@ class InstalledAppRepository @Inject constructor(
     private val _alarmListData = MutableStateFlow<List<AlarmLauncher>>(emptyList())
     val alarmListData: StateFlow<List<AlarmLauncher>>
         get() = _alarmListData
+
 
     fun getInstalledApps() {
         CoroutineScope(Dispatchers.IO).launch {
@@ -89,14 +96,18 @@ class InstalledAppRepository @Inject constructor(
         }
     }
 
-    fun deleteAlarm(alarmId: Int) {
-        CoroutineScope(Dispatchers.IO).launch {
-            alarmLauncherDao.deleteAlarmById(alarmId)
-        }
+    fun deleteAlarm(alarmId: Int): Int {
+        return alarmLauncherDao.deleteAlarmById(alarmId)
     }
 
     fun getAlarmById(alarmId: Int): AlarmLauncher? {
         return alarmLauncherDao.getAlarmById(alarmId)
+    }
+
+    fun getAlarmByPackageName(packageName: String): Flow<AlarmLauncher> {
+       return alarmLauncherDao.getAllAlarms().filter {
+            it.packageName == packageName
+        }.asFlow()
     }
 
     fun markAlarmAsLaunched(alarmId: Int) {
@@ -112,5 +123,17 @@ class InstalledAppRepository @Inject constructor(
                 }
             }
         }
+    }
+
+    fun getAppName(packageName: String): String {
+        try {
+            val applicationInfo = packageManager.getApplicationInfo(packageName, 0)
+            return packageManager.getApplicationLabel(applicationInfo).toString()
+
+        } catch (nameException: PackageManager.NameNotFoundException) {
+            Log.e(TAG, "onStartCommand: " + nameException.printStackTrace())
+        }
+
+        return ""
     }
 }

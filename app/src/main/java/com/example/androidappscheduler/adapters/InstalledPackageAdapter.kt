@@ -13,7 +13,8 @@ import com.example.androidappscheduler.models.PackageInstance
 class InstalledPackageAdapter(
     private val context: Context,
     private val packageInstances: List<PackageInstance>,
-    private val packageClicked: (String) -> Unit
+    private val alarmDetailClicked: (String) -> Unit = {},
+    private val packageClicked: (String) -> Unit,
 ) : RecyclerView.Adapter<InstalledPackageAdapter.PackageViewHolder>() {
 
     override fun onCreateViewHolder(
@@ -27,7 +28,7 @@ class InstalledPackageAdapter(
 
     override fun onBindViewHolder(holder: PackageViewHolder, position: Int) {
         holder.packageNameTextView.text = packageInstances[position].appName
-        holder.itemView.setOnClickListener {
+        holder.packageNameTextView.setOnClickListener {
             packageClicked(packageInstances[position].packageName)
         }
         var color = 0;
@@ -39,6 +40,10 @@ class InstalledPackageAdapter(
             color = "#000000".toColorInt()
         }
         holder.packageNameTextView.setTextColor(color)
+
+        holder.rightArrow.setOnClickListener {
+            alarmDetailClicked(packageInstances[position].packageName)
+        }
     }
 
     override fun getItemCount(): Int {

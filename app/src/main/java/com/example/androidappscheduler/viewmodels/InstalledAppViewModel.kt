@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-
+@HiltViewModel
 class InstalledAppViewModel @Inject constructor(private val installedAppRepository: InstalledAppRepository): ViewModel() {
 
     val installedAppListState: StateFlow<List<PackageInstance>>

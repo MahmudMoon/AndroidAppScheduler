@@ -12,6 +12,7 @@ import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -22,6 +23,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.asLiveData
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.androidappscheduler.ui.AlarmDetailActivity
 import com.example.androidappscheduler.R
 import com.example.androidappscheduler.adapters.InstalledPackageAdapter
 import com.example.androidappscheduler.receiver.AlarmReceiver
@@ -37,8 +39,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var installedPackageAdapter: InstalledPackageAdapter
     private lateinit var recyclerView: RecyclerView
 
-    @Inject
-    lateinit var installedAppViewModel: InstalledAppViewModel
+    private val installedAppViewModel: InstalledAppViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -55,6 +56,8 @@ class MainActivity : AppCompatActivity() {
         }
 
         installedPackageAdapter = InstalledPackageAdapter(this, emptyList()) { packageName ->
+            //launchApp(packageName)
+            //setAlarmForPackage(packageName)
             openAlarmDialog(packageName)
         }
 
@@ -65,7 +68,9 @@ class MainActivity : AppCompatActivity() {
 
         installedAppViewModel.installedAppListState.asLiveData().observe(this){
             Log.d(TAG, "onCreate: $it")
-            installedPackageAdapter = InstalledPackageAdapter(this, it) { packageName ->
+            installedPackageAdapter = InstalledPackageAdapter(this, it, { packageName ->
+                onAlarmDetailClicked(packageName)
+            }) { packageName ->
                 //launchApp(packageName)
                 //setAlarmForPackage(packageName)
                 openAlarmDialog(packageName)
@@ -88,6 +93,14 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun onAlarmDetailClicked(packageName: String) {
+        // Handle alarm detail click
+        Log.d(TAG, "onAlarmDetailClicked: $packageName")
+        val intent = Intent(this, AlarmDetailActivity::class.java)
+        intent.putExtra("packageName", packageName)
+        startActivity(intent)
+    }
+
     private fun openAlarmDialog(packageName: String) {
         val calendar = Calendar.getInstance()
         val hour = calendar.get(Calendar.HOUR_OF_DAY)
@@ -101,7 +114,11 @@ class MainActivity : AppCompatActivity() {
                 setTitle("Set Alarm for $packageName")
                 setMessage("Do you want to set an alarm for $packageName at ${selectedHour}:${String.format("%02d", selectedMinute)}?")
                 setPositiveButton("Yes") { _, _ ->
-                    setAlarmForPackage(packageName, calendar.timeInMillis)
+                    if(calendar.timeInMillis > System.currentTimeMillis())
+                        setAlarmForPackage(packageName, calendar.timeInMillis)
+                    else{
+                        Toast.makeText(applicationContext, "Can not set alarm to previos time", Toast.LENGTH_SHORT).show()
+                    }
                 }
                 setNegativeButton("No") { dialog, _ ->
                     dialog.dismiss()

@@ -1,5 +1,6 @@
 package com.example.androidappscheduler.di
 
+import android.app.AlarmManager
 import android.app.NotificationManager
 import android.content.Context
 import android.content.pm.PackageManager
@@ -16,6 +17,20 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 class AppModule {
+
+
+    @Provides
+    @Singleton
+    fun provideContext(@ApplicationContext context: Context): Context {
+        return context
+    }
+
+    @Provides
+    @Singleton
+    fun provideAlarmManager(@ApplicationContext context: Context): AlarmManager {
+        return context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+    }
+
     @Provides
     @Singleton
     fun providePackageManager(@ApplicationContext context: Context): PackageManager {

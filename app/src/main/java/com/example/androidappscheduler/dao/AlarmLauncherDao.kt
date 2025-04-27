@@ -16,7 +16,7 @@ interface AlarmLauncherDao {
     fun getAllAlarms(): List<AlarmLauncher>
 
     @Query("DELETE FROM alarms WHERE alarmId = :alarmId")
-    fun deleteAlarmById(alarmId: Int)
+    fun deleteAlarmById(alarmId: Int): Int
 
     @Update(onConflict = OnConflictStrategy.REPLACE)
     fun markAlarmAsLaunched(alarmEntity: AlarmLauncher): Int
