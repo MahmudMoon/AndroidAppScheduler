@@ -9,6 +9,7 @@ import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.androidappscheduler.R
@@ -17,6 +18,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.androidappscheduler.adapters.AlarmsGridAdapter
 import com.example.androidappscheduler.utils.Constants.openAlarmDialog
 import com.example.androidappscheduler.viewmodels.AlarmDetailViewModel
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import dagger.hilt.android.AndroidEntryPoint
 
 
@@ -29,18 +31,19 @@ class AlarmDetailActivity : AppCompatActivity() {
     private val alarmDetailViewModel: AlarmDetailViewModel by viewModels()
     lateinit var tvAppName: TextView
     lateinit var tvPackageName: TextView
+    lateinit var fabAddAlarm: FloatingActionButton
+    lateinit var toolbar: Toolbar
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContentView(R.layout.activity_alarm_detail)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
-        }
 
+        toolbar = findViewById(R.id.toolbar_detail)
+        setSupportActionBar(toolbar)
+        supportActionBar?.title = "Scheduled Alarms"
+
+        fabAddAlarm = findViewById(R.id.fab_add_alarm_alarm_detail)
         tvAppName = findViewById(R.id.tv_app_name_detail)
         tvPackageName = findViewById(R.id.tv_package_name_detail)
         val packageName = intent.getStringExtra("packageName")
@@ -119,6 +122,36 @@ class AlarmDetailActivity : AppCompatActivity() {
             }
             alarms_rv.adapter?.notifyDataSetChanged()
         }
+
+        alarmDetailViewModel.successfullyStoredAlarm.observe(this){
+            Log.d(TAG, "onCreate: Successfully added alarm: $it")
+            if (it) {
+                alarmDetailViewModel.getAlarmList(tvPackageName.text.toString())
+                Toast.makeText(this, "Alarm added successfully", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "Failed to add alarm", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        fabAddAlarm.setOnClickListener {
+            openAlarmDialog(
+                packageName = tvPackageName.text.toString(),
+                context = this
+            ) { packName, alarmTime ->
+                Log.d(TAG, "onCreate: setAlarmForPackage: $packName, $alarmTime")
+                setAlarmForPackage(
+                    packageName = packName,
+                    alarmTime = alarmTime
+                )
+            }
+        }
+    }
+
+    private fun setAlarmForPackage(packageName: String, alarmTime: Long) {
+        val uniqueRequestCode = System.currentTimeMillis().hashCode()
+        alarmDetailViewModel.saveAlarm(this@AlarmDetailActivity, uniqueRequestCode, packageName, alarmTime)
+        Log.d(TAG, "setAlarmForPackage: $packageName RequestCode: $uniqueRequestCode")
+       // mainActivityViewModel.getInstalledApps()
     }
 
     override fun onStart() {

@@ -68,6 +68,6 @@ object Constants {
                 }
                 show()
             }
-        }, hour, minute, true).show()
+        }, hour, minute, false).show()
     }
 }

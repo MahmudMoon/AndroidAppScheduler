@@ -17,7 +17,10 @@ import javax.inject.Inject
 private const val TAG = "AlarmDetailViewModel"
 
 @HiltViewModel
-class AlarmDetailViewModel @Inject constructor(private val repository: InstalledAppRepository, private val alarmRepo: AlarmRepo) :
+class AlarmDetailViewModel @Inject constructor(
+    private val repository: InstalledAppRepository,
+    private val alarmRepo: AlarmRepo
+) :
     ViewModel() {
 
     private val _alarmListDataForDetail = MutableLiveData<List<AlarmLauncher>>()
@@ -32,6 +35,10 @@ class AlarmDetailViewModel @Inject constructor(private val repository: Installed
     private val _alarmUpdated = MutableLiveData<Boolean>()
     val alarmUpdated: LiveData<Boolean>
         get() = _alarmUpdated
+
+    private val _successfullyStoredAlarm = MutableLiveData<Boolean>(false)
+    val successfullyStoredAlarm: LiveData<Boolean>
+        get() = _successfullyStoredAlarm
 
 
     fun getAppName(packageName: String): String {
@@ -61,14 +68,41 @@ class AlarmDetailViewModel @Inject constructor(private val repository: Installed
     fun editAlarm(context: Context, alarmId: Int, alarmTime: Long, packageName: String) {
         CoroutineScope(Dispatchers.IO).launch {
             alarmRepo.cancelAnAlarm(context = context, alarmID = alarmId, packageName = packageName)
-            alarmRepo.setAnAlarm(context = context, alarmID = alarmId, alarmTime = alarmTime, packageName = packageName)
-            repository.updateAlarm(alarmLauncher = AlarmLauncher(alarmId, packageName, alarmTime, false)).apply {
+            alarmRepo.setAnAlarm(
+                context = context,
+                alarmID = alarmId,
+                alarmTime = alarmTime,
+                packageName = packageName
+            )
+            repository.updateAlarm(
+                alarmLauncher = AlarmLauncher(
+                    alarmId,
+                    packageName,
+                    alarmTime,
+                    false
+                )
+            ).apply {
                 if (this > 0) {
                     Log.d(TAG, "editAlarm: Alarm updated successfully")
                     _alarmUpdated.postValue(true)
                 } else {
                     Log.d(TAG, "editAlarm: Alarm update failed")
                     _alarmUpdated.postValue(false)
+                }
+            }
+        }
+    }
+
+    fun saveAlarm(context: Context, uniqueRequestCode: Int, packageName: String, alarmTime: Long) {
+        CoroutineScope(Dispatchers.IO).launch {
+            alarmRepo.setAnAlarm(context = context, uniqueRequestCode, alarmTime, packageName)
+            repository.saveAnewAlarm(uniqueRequestCode, packageName, alarmTime).apply {
+                if (this > 0) {
+                    Log.d(TAG, "saveAlarm: Alarm saved successfully")
+                    _successfullyStoredAlarm.postValue(true)
+                } else {
+                    Log.d(TAG, "saveAlarm: Failed to save alarm")
+                    _successfullyStoredAlarm.postValue(false)
                 }
             }
         }

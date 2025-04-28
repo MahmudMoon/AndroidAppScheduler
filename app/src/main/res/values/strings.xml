@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">AndroidAppScheduler</string>
+    <string name="edit">edit</string>
+    <string name="add_alarms">add alarms</string>
 </resources>
