@@ -10,16 +10,13 @@ import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
-import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.lifecycle.asLiveData
+import androidx.core.net.toUri
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.androidappscheduler.R
@@ -103,17 +100,7 @@ class MainActivity : AppCompatActivity() {
 
     @RequiresApi(Build.VERSION_CODES.S)
     private fun checkAlarmPermission() {
-        if (ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.SCHEDULE_EXACT_ALARM
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            ActivityCompat.requestPermissions(
-                this@MainActivity,
-                arrayOf(Manifest.permission.SCHEDULE_EXACT_ALARM),
-                104
-            )
-        } else {
+          {
             Log.d(TAG, "checkAlarmPermission: Permission granted")
         }
     }
@@ -125,12 +112,13 @@ class MainActivity : AppCompatActivity() {
         caller: ComponentCaller
     ) {
         super.onActivityResult(requestCode, resultCode, data, caller)
-        if (requestCode == 104) {
+        if (requestCode == 104 || resultCode == 105) {
             if (resultCode == RESULT_OK) {
                 Log.d(TAG, "onActivityResult: Permission granted")
-
+                onStart()
             } else {
                 Log.d(TAG, "onActivityResult: Permission denied")
+                finish()
             }
         }
     }
@@ -142,11 +130,37 @@ class MainActivity : AppCompatActivity() {
         mainActivityViewModel.getInstalledApps()
     }
 
+    private fun requestOverlayPermission() {
+        val intent = Intent(
+            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+            ("package:$packageName").toUri()
+        )
+        startActivityForResult(intent, 106)
+    }
+
 
     override fun onStart() {
         super.onStart()
         Log.d(TAG, "onStart: ")
 
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (!alarmManager.canScheduleExactAlarms()) {
+                Intent().also {
+                    it.action = Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM
+                    startActivity(it)
+                }
+            }else if (ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.SCHEDULE_EXACT_ALARM
+            ) != PackageManager.PERMISSION_GRANTED
+                    ) {
+                ActivityCompat.requestPermissions(
+                    this@MainActivity,
+                    arrayOf(Manifest.permission.SCHEDULE_EXACT_ALARM),
+                    104
+                )
+            }
+        }
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
 
             if (ContextCompat.checkSelfPermission(
@@ -157,25 +171,17 @@ class MainActivity : AppCompatActivity() {
                 ActivityCompat.requestPermissions(
                     this@MainActivity,
                     arrayOf(Manifest.permission.POST_NOTIFICATIONS),
-                    104
+                    105
                 )
             } else {
                 Log.d(TAG, "onStart: Permission granted")
             }
         }
 
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            if (!alarmManager.canScheduleExactAlarms()) {
-                Intent().also {
-                    it.action = Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM
-                    startActivity(it)
-                }
-            }
+        if(!Settings.canDrawOverlays(this)){
+            requestOverlayPermission()
         }
         mainActivityViewModel.getInstalledApps()
-
-        //test purpose
-       // mainActivityViewModel.getSavedAlarmList()
     }
 
 

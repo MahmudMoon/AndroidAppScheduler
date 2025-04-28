@@ -2,16 +2,21 @@ package com.example.androidappscheduler.services
 
 import android.app.ActivityOptions
 import android.app.Notification
+import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Build
+import android.os.Bundle
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.util.Log
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import com.example.androidappscheduler.R
 import com.example.androidappscheduler.dao.AlarmLauncherDao
@@ -44,27 +49,33 @@ class LauncherForegroundService: Service() {
     lateinit var installedAppRepo: InstalledAppRepository
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            createNotificationChannel()
+        }
 
         val packageName = intent?.getStringExtra("packageName") ?: ""
         Log.d(TAG, "onStartCommand: Package Name: $packageName")
 
+
         val alarmID = intent?.getIntExtra("alarmID", 0) ?: 0
         Log.d(TAG, "onStartCommand: Alarm ID: $alarmID")
 
-        var appName = packageName
+        val notification: Notification = createNotification()
+        Log.d(TAG, "onStartCommand:Create notification for := $alarmID")
+        startForeground(alarmID, notification)
 
-        try {
-            val applicationInfo = _packageManager.getApplicationInfo(packageName, 0)
-            appName = _packageManager.getApplicationLabel(applicationInfo).toString()
+//        var appName = packageName
+//
+//        try {
+//            val applicationInfo = _packageManager.getApplicationInfo(packageName, 0)
+//            appName = _packageManager.getApplicationLabel(applicationInfo).toString()
+//
+//        }catch (nameException: PackageManager.NameNotFoundException) {
+//            Log.e(TAG, "onStartCommand: "+nameException.printStackTrace())
+//        }
 
-        }catch (nameException: PackageManager.NameNotFoundException) {
-            Log.e(TAG, "onStartCommand: "+nameException.printStackTrace())
-        }
-
-        val notification: Notification = createNotification(appName)
-        Log.d(TAG, "onStartCommand:Create notification for ${appName}:= "+packageName.hashCode())
-        startForeground(abs(packageName.hashCode()), notification)
-        saveLastNotificationID(applicationContext, abs(packageName.hashCode()))
+        saveLastNotificationID(applicationContext, alarmID)
+        Log.d(TAG, "onStartCommand: DB OPERATION DONE")
 
         if (packageName.isNotEmpty()) {
 
@@ -93,8 +104,8 @@ class LauncherForegroundService: Service() {
                    installedAppRepo.markAlarmAsLaunched(alarmID)
                 }
 
-                if(getLastNotificationID(applicationContext) == abs(packageName.hashCode())){
-                    stopForegroundService(abs(packageName.hashCode()))
+                if(getLastNotificationID(applicationContext) == alarmID){
+                    stopForegroundService(alarmID)
                 }
             }, randomDelay - System.currentTimeMillis())
 
@@ -108,9 +119,6 @@ class LauncherForegroundService: Service() {
     private fun launchApp(context: Context, packageName: String) {
         val launchIntent = _packageManager.getLaunchIntentForPackage(packageName)
         Log.d(TAG, "launchApp: $packageName")
-
-
-
 
         launchIntent?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         if (launchIntent != null) {
@@ -132,7 +140,7 @@ class LauncherForegroundService: Service() {
         super.onCreate()
     }
 
-    private fun createNotification(appName: String): Notification {
+    private fun createNotification(appName: String = ""): Notification {
         val builder: NotificationCompat.Builder = NotificationCompat.Builder(this, Constants.NOTIFICATION_CHANNEL_ID)
             .setContentTitle(Constants.APP_NAME)
             .setContentText("Launching Apps")
@@ -144,5 +152,16 @@ class LauncherForegroundService: Service() {
         notificationManager.cancel(notificationId)
         stopForeground(STOP_FOREGROUND_REMOVE)
         Log.d(TAG, "stopping : $notificationId")
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun createNotificationChannel() {
+        val notificationChannel = NotificationChannel(
+            Constants.NOTIFICATION_CHANNEL_ID,
+            Constants.NOTIFICATION_CHANNEL_NAME,
+            NotificationManager.IMPORTANCE_HIGH
+        )
+        val notificationManager = getSystemService(NotificationManager::class.java)
+        notificationManager.createNotificationChannel(notificationChannel)
     }
 }
