@@ -61,13 +61,11 @@ class MainActivity : AppCompatActivity() {
         recyclerView.adapter = installedPackageAdapter
 
 
-        mainActivityViewModel.installedAppListState.asLiveData().observe(this) {
+        mainActivityViewModel.installedAppList.observe(this) {
             Log.d(TAG, "onCreate: $it")
             installedPackageAdapter = InstalledPackageAdapter(this, it, { packageName ->
                 onAlarmDetailClicked(packageName)
             }) { packageName ->
-                //launchApp(packageName)
-                //setAlarmForPackage(packageName)
                 openAlarmDialog(packageName = packageName, context = this) { packName, alarmTime ->
                     setAlarmForPackage(packName, alarmTime)
                 }
@@ -76,9 +74,10 @@ class MainActivity : AppCompatActivity() {
             installedPackageAdapter.notifyDataSetChanged()
         }
 
-        mainActivityViewModel.successfullyStoredAlarm.asLiveData().observe(this) {
+        mainActivityViewModel.successfullyStoredAlarm.observe(this) {
             Log.d(TAG, "onCreate: Successfully stored alarm: $it")
             if (it) {
+                mainActivityViewModel.getInstalledApps()
                 Toast.makeText(this, "Alarm set successfully", Toast.LENGTH_SHORT).show()
             } else {
                 Toast.makeText(this, "Failed to set alarm", Toast.LENGTH_SHORT).show()
@@ -142,7 +141,7 @@ class MainActivity : AppCompatActivity() {
         mainActivityViewModel.getInstalledApps()
 
         //test purpose
-        mainActivityViewModel.getSavedAlarmList()
+       // mainActivityViewModel.getSavedAlarmList()
     }
 
 

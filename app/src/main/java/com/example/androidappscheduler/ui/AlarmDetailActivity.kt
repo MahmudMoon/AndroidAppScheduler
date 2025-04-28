@@ -47,7 +47,6 @@ class AlarmDetailActivity : AppCompatActivity() {
         tvPackageName.text = packageName
         tvAppName.text = alarmDetailViewModel.getAppName(packageName ?: "")
 
-
         alarms_rv = findViewById<RecyclerView>(R.id.recycler_view)
         alarms_rv.layoutManager = GridLayoutManager(this, 2) // 2 columns
         alarms_rv.adapter =

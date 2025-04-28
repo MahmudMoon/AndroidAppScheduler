@@ -10,7 +10,7 @@ import com.example.androidappscheduler.entries.AlarmLauncher
 @Dao
 interface AlarmLauncherDao {
     @Insert(onConflict = OnConflictStrategy.ABORT)
-    fun insertAlarm(alarmEntity: AlarmLauncher): Long // Returns the row ID of the inserted item
+    fun insertAlarm(alarmEntity: AlarmLauncher): Long
 
     @Query("SELECT * FROM alarms")
     fun getAllAlarms(): List<AlarmLauncher>
