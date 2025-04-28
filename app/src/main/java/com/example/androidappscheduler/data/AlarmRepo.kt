@@ -5,6 +5,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
 import com.example.androidappscheduler.receiver.AlarmReceiver
@@ -61,6 +62,16 @@ class AlarmRepo @Inject constructor(
                         pendingIntent
                     )
                     //  Toast.makeText(context, "Alarm set for $packageName", Toast.LENGTH_SHORT).show()
+                }else{
+                    Log.d(TAG, "setAnAlarm: canScheduleExactAlarms: false")
+                    if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        if (!alarmManager.canScheduleExactAlarms()) {
+                            Intent().also {
+                                it.action = Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM
+                                context.startActivity(it)
+                            }
+                        }
+                    }
                 }
             } else {
                 alarmManager.setExactAndAllowWhileIdle(

@@ -1,5 +1,6 @@
 package com.example.androidappscheduler.services
 
+import android.app.ActivityOptions
 import android.app.Notification
 import android.app.NotificationManager
 import android.app.Service
@@ -60,7 +61,7 @@ class LauncherForegroundService: Service() {
             Log.e(TAG, "onStartCommand: "+nameException.printStackTrace())
         }
 
-        val notification: Notification? = createNotification(appName)
+        val notification: Notification = createNotification(appName)
         Log.d(TAG, "onStartCommand:Create notification for ${appName}:= "+packageName.hashCode())
         startForeground(abs(packageName.hashCode()), notification)
         saveLastNotificationID(applicationContext, abs(packageName.hashCode()))
@@ -107,7 +108,10 @@ class LauncherForegroundService: Service() {
     private fun launchApp(context: Context, packageName: String) {
         val launchIntent = _packageManager.getLaunchIntentForPackage(packageName)
         Log.d(TAG, "launchApp: $packageName")
-        //Log.d(TAG, "launchApp: $launchIntent")
+
+
+
+
         launchIntent?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         if (launchIntent != null) {
             context.startActivity(launchIntent)

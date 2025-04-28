@@ -1,11 +1,13 @@
 package com.example.androidappscheduler.ui
 
 import android.Manifest
+import android.app.AlarmManager
 import android.app.ComponentCaller
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
@@ -25,6 +27,7 @@ import com.example.androidappscheduler.adapters.InstalledPackageAdapter
 import com.example.androidappscheduler.utils.Constants.openAlarmDialog
 import com.example.androidappscheduler.viewmodels.MainActivityViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 private const val TAG = "MainActivity"
 
@@ -33,6 +36,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var installedPackageAdapter: InstalledPackageAdapter
     private lateinit var recyclerView: RecyclerView
     private lateinit var toolbar: Toolbar
+
+    @Inject
+    lateinit var alarmManager: AlarmManager
 
     private val mainActivityViewModel: MainActivityViewModel by viewModels()
 
@@ -136,9 +142,36 @@ class MainActivity : AppCompatActivity() {
         mainActivityViewModel.getInstalledApps()
     }
 
+
     override fun onStart() {
         super.onStart()
         Log.d(TAG, "onStart: ")
+
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                ActivityCompat.requestPermissions(
+                    this@MainActivity,
+                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                    104
+                )
+            } else {
+                Log.d(TAG, "onStart: Permission granted")
+            }
+        }
+
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (!alarmManager.canScheduleExactAlarms()) {
+                Intent().also {
+                    it.action = Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM
+                    startActivity(it)
+                }
+            }
+        }
         mainActivityViewModel.getInstalledApps()
 
         //test purpose
