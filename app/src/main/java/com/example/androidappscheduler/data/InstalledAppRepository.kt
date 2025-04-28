@@ -29,15 +29,6 @@ class InstalledAppRepository @Inject constructor(
     val successfullyStoredAlarm: StateFlow<Boolean>
         get() = _successfullyStoredAlarm
 
-    private val _successfullyUpdatedAlarm = MutableStateFlow<Boolean>(false)
-    val successfullyUpdatedAlarm: StateFlow<Boolean>
-        get() = _successfullyUpdatedAlarm
-
-
-    private val _alarmListData = MutableStateFlow<List<AlarmLauncher>>(emptyList())
-    val alarmListData: StateFlow<List<AlarmLauncher>>
-        get() = _alarmListData
-
 
     fun getInstalledApps() {
         CoroutineScope(Dispatchers.IO).launch {
@@ -58,8 +49,6 @@ class InstalledAppRepository @Inject constructor(
                 _installedAppListState.emit(packageInstances)
             }
         }
-
-
     }
 
     fun saveAnewAlarm(alarmId: Int, packageName: String, time: Long) {
@@ -81,19 +70,15 @@ class InstalledAppRepository @Inject constructor(
         }
     }
 
-    fun getSavedAlarmList() {
-        CoroutineScope(Dispatchers.IO).launch {
-            alarmLauncherDao.getAllAlarms().map {
-                AlarmLauncher(
-                    alarmId = it.alarmId,
-                    packageName = it.packageName,
-                    launchTime = it.launchTime,
-                    isLaunched = it.isLaunched
-                )
-            }.let { alarms ->
-                _alarmListData.emit(alarms)
-            }
-        }
+    fun getSavedAlarmList(): Flow<AlarmLauncher> {
+       return alarmLauncherDao.getAllAlarms().map {
+            AlarmLauncher(
+                alarmId = it.alarmId,
+                packageName = it.packageName,
+                launchTime = it.launchTime,
+                isLaunched = it.isLaunched
+            )
+        }.asFlow()
     }
 
     fun deleteAlarm(alarmId: Int): Int {
@@ -105,23 +90,15 @@ class InstalledAppRepository @Inject constructor(
     }
 
     fun getAlarmByPackageName(packageName: String): Flow<AlarmLauncher> {
-       return alarmLauncherDao.getAllAlarms().filter {
+        return alarmLauncherDao.getAllAlarms().filter {
             it.packageName == packageName
         }.asFlow()
     }
 
     fun markAlarmAsLaunched(alarmId: Int) {
-        CoroutineScope(Dispatchers.IO).launch {
-            getAlarmById(alarmId)?.let {
-                val updatedAlarm = it.copy(isLaunched = true)
-                alarmLauncherDao.markAlarmAsLaunched(updatedAlarm).apply {
-                    if (this > 0) {
-                        _successfullyUpdatedAlarm.emit(true)
-                    } else {
-                        _successfullyUpdatedAlarm.emit(false)
-                    }
-                }
-            }
+        getAlarmById(alarmId)?.let {
+            val updatedAlarm = it.copy(isLaunched = true)
+            alarmLauncherDao.markAlarmAsLaunched(updatedAlarm)
         }
     }
 
@@ -135,5 +112,9 @@ class InstalledAppRepository @Inject constructor(
         }
 
         return ""
+    }
+
+    fun updateAlarm(alarmLauncher: AlarmLauncher): Int {
+        return alarmLauncherDao.updateAlarm(alarmLauncher)
     }
 }

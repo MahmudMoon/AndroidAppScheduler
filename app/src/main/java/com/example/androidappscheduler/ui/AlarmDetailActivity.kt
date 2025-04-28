@@ -11,15 +11,13 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.core.widget.TextViewCompat
-import androidx.lifecycle.asLiveData
 import com.example.androidappscheduler.R
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.androidappscheduler.adapters.AlarmsGridAdapter
+import com.example.androidappscheduler.utils.Constants.openAlarmDialog
 import com.example.androidappscheduler.viewmodels.AlarmDetailViewModel
 import dagger.hilt.android.AndroidEntryPoint
-import kotlin.math.log
 
 
 private const val TAG = "AlarmDetailActivity"
@@ -52,7 +50,8 @@ class AlarmDetailActivity : AppCompatActivity() {
 
         alarms_rv = findViewById<RecyclerView>(R.id.recycler_view)
         alarms_rv.layoutManager = GridLayoutManager(this, 2) // 2 columns
-        alarms_rv.adapter = AlarmsGridAdapter(emptyList(), onDeleteClick = { _, _ -> }, onEditClick = {})
+        alarms_rv.adapter =
+            AlarmsGridAdapter(emptyList(), onDeleteClick = { _, _ -> }, onEditClick = { _, _ -> })
 
         alarmDetailViewModel.alarmDeleted.observe(this) {
             Log.d(TAG, "onCreate: AlarmDeleted ${it}")
@@ -61,21 +60,62 @@ class AlarmDetailActivity : AppCompatActivity() {
             }
         }
 
+        alarmDetailViewModel.alarmUpdated.observe(this) {
+            Log.d(TAG, "onCreate: AlarmUpdated ${it}")
+            if (it) {
+                alarmDetailViewModel.getAlarmList(tvPackageName.text.toString())
+            }
+        }
+
         alarmDetailViewModel.alarmListDataForDetail.observe(this) { alarmList ->
             if (alarmList.isNotEmpty()) {
-                alarms_rv.adapter = AlarmsGridAdapter(alarmList.sortedBy { it.launchTime }.reversed(), onDeleteClick = { alarmId, packageName ->
-                    Log.d(TAG, "onCreate: OnDelete click for id ${alarmId}")
-                    showConfirmationDialog("Delete Alarm", "Are you sure you want to delete this alarm?", this) {
-                        Log.d(TAG, "onCreate: OnDelete click for id ${alarmId} confirmed")
-                        alarmDetailViewModel.deleteAlarm(alarmId, this, packageName)
-                        Toast.makeText(this, "Alarm with ID $alarmId deleted", Toast.LENGTH_SHORT).show()
-                    }
-                }, onEditClick = { alarmId ->
-                    // Handle edit action
-                    Toast.makeText(this, "Alarm with ID $alarmId edited", Toast.LENGTH_SHORT).show()
-                })
+                alarms_rv.adapter =
+                    AlarmsGridAdapter(alarmList.sortedBy { it.launchTime }.reversed(),
+                        onDeleteClick = { alarmId, packageName ->
+                            Log.d(TAG, "onCreate: OnDelete click for id ${alarmId}")
+                            showConfirmationDialog(
+                                "Delete Alarm",
+                                "Are you sure you want to delete this alarm?",
+                                this
+                            ) {
+                                Log.d(TAG, "onCreate: OnDelete click for id ${alarmId} confirmed")
+                                alarmDetailViewModel.deleteAlarm(alarmId, this, packageName)
+                                Toast.makeText(
+                                    this,
+                                    "Alarm with ID $alarmId deleted",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        },
+                        onEditClick = { alarmId, launchTime ->
+                            Log.d(
+                                TAG,
+                                "onCreate: OnEdit click for id $alarmId , launchTime $launchTime"
+                            )
+                            openAlarmDialog(
+                                packageName = tvPackageName.text.toString(),
+                                suggestedTime = launchTime,
+                                context = this
+                            ) { packName, alarmTime ->
+                                Log.d(TAG, "onCreate: editAlarmForPack: $packName, $alarmTime")
+                                alarmDetailViewModel.editAlarm(
+                                    context = this@AlarmDetailActivity,
+                                    alarmId = alarmId,
+                                    alarmTime = alarmTime,
+                                    packageName = packName
+                                )
+                            }
+                            Toast.makeText(
+                                this,
+                                "Alarm with ID $alarmId edited",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        })
             } else {
-                alarms_rv.adapter = AlarmsGridAdapter(emptyList(), onDeleteClick = { _, _ -> }, onEditClick = {})
+                alarms_rv.adapter = AlarmsGridAdapter(
+                    emptyList(),
+                    onDeleteClick = { _, _ -> },
+                    onEditClick = { _, _ -> })
                 Toast.makeText(this, "No alarms found for this app", Toast.LENGTH_SHORT).show()
             }
             alarms_rv.adapter?.notifyDataSetChanged()
@@ -90,7 +130,7 @@ class AlarmDetailActivity : AppCompatActivity() {
 
 private fun showConfirmationDialog(
     title: String,
-     message: String,
+    message: String,
     context: Context,
     onConfirmation: () -> Unit
 ) {

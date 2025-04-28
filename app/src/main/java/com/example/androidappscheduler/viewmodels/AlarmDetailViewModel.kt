@@ -5,17 +5,14 @@ import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.example.androidappscheduler.data.AlarmRepo
 import com.example.androidappscheduler.data.InstalledAppRepository
 import com.example.androidappscheduler.entries.AlarmLauncher
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import kotlin.math.log
 
 private const val TAG = "AlarmDetailViewModel"
 
@@ -31,6 +28,10 @@ class AlarmDetailViewModel @Inject constructor(private val repository: Installed
     private val _alarmDeleted = MutableLiveData<Boolean>()
     val alarmDeleted: LiveData<Boolean>
         get() = _alarmDeleted
+
+    private val _alarmUpdated = MutableLiveData<Boolean>()
+    val alarmUpdated: LiveData<Boolean>
+        get() = _alarmUpdated
 
 
     fun getAppName(packageName: String): String {
@@ -54,6 +55,22 @@ class AlarmDetailViewModel @Inject constructor(private val repository: Installed
             val result = repository.deleteAlarm(alarmId)
             Log.d(TAG, "deleteAlarm: onAlarm Delete $alarmId done result $result")
             _alarmDeleted.postValue(result > 0)
+        }
+    }
+
+    fun editAlarm(context: Context, alarmId: Int, alarmTime: Long, packageName: String) {
+        CoroutineScope(Dispatchers.IO).launch {
+            alarmRepo.cancelAnAlarm(context = context, alarmID = alarmId, packageName = packageName)
+            alarmRepo.setAnAlarm(context = context, alarmID = alarmId, alarmTime = alarmTime, packageName = packageName)
+            repository.updateAlarm(alarmLauncher = AlarmLauncher(alarmId, packageName, alarmTime, false)).apply {
+                if (this > 0) {
+                    Log.d(TAG, "editAlarm: Alarm updated successfully")
+                    _alarmUpdated.postValue(true)
+                } else {
+                    Log.d(TAG, "editAlarm: Alarm update failed")
+                    _alarmUpdated.postValue(false)
+                }
+            }
         }
     }
 }

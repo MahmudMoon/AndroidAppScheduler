@@ -23,4 +23,7 @@ interface AlarmLauncherDao {
 
     @Query("SELECT * FROM alarms WHERE alarmId = :alarmId")
     fun getAlarmById(alarmId: Int): AlarmLauncher
+
+    @Update(onConflict = OnConflictStrategy.REPLACE)
+    fun updateAlarm(alarmLauncher: AlarmLauncher): Int
 }

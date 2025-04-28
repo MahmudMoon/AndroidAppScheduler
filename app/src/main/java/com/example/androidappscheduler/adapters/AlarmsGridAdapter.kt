@@ -13,7 +13,7 @@ import java.util.Locale
 import android.icu.text.SimpleDateFormat
 import android.widget.ImageButton
 
-class AlarmsGridAdapter(private val items: List<AlarmLauncher>,private val onDeleteClick: (Int, String)-> Unit, private val onEditClick: (Int)-> Unit = {}) : RecyclerView.Adapter<AlarmsGridAdapter.ViewHolder>() {
+class AlarmsGridAdapter(private val items: List<AlarmLauncher>,private val onDeleteClick: (Int, String)-> Unit, private val onEditClick: (Int, Long)-> Unit) : RecyclerView.Adapter<AlarmsGridAdapter.ViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.alarm_events_item, parent, false)
@@ -36,7 +36,7 @@ class AlarmsGridAdapter(private val items: List<AlarmLauncher>,private val onDel
         }
 
         holder.ibtnEdit.setOnClickListener {
-            onEditClick(items[position].alarmId)
+            onEditClick(items[position].alarmId, items[position].launchTime)
         }
     }
 

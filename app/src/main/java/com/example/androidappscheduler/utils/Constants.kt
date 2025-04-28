@@ -1,6 +1,10 @@
 package com.example.androidappscheduler.utils
 
+import android.app.TimePickerDialog
 import android.content.Context
+import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
+import java.util.Calendar
 
 object Constants {
     const val SHARED_PREF_NAME = "app_scheduler_prefs"
@@ -35,5 +39,35 @@ object Constants {
     fun getLastNotificationID(context: Context): Int {
         return context.getSharedPreferences(SHARED_PREF_NAME, Context.MODE_PRIVATE)
             .getInt(LAST_NOTIFICATION_ID, 0)
+    }
+
+    fun openAlarmDialog(packageName: String, suggestedTime: Long = 0L ,context: Context, setAlarmForPackage: (String, Long) -> Unit) {
+        val calendar = Calendar.getInstance()
+        if(suggestedTime>0){
+            calendar.timeInMillis = suggestedTime
+        }
+        val hour = calendar.get(Calendar.HOUR_OF_DAY)
+        val minute = calendar.get(Calendar.MINUTE)
+
+        TimePickerDialog(context, { _, selectedHour, selectedMinute ->
+            calendar.set(Calendar.HOUR_OF_DAY, selectedHour)
+            calendar.set(Calendar.MINUTE, selectedMinute)
+
+            AlertDialog.Builder(context).apply {
+                setTitle("Set Alarm for $packageName")
+                setMessage("Do you want to set an alarm for $packageName at ${selectedHour}:${String.format("%02d", selectedMinute)}?")
+                setPositiveButton("Yes") { _, _ ->
+                    if(calendar.timeInMillis > System.currentTimeMillis())
+                        setAlarmForPackage(packageName, calendar.timeInMillis)
+                    else{
+                        Toast.makeText(context, "Can not set alarm to previos time", Toast.LENGTH_SHORT).show()
+                    }
+                }
+                setNegativeButton("No") { dialog, _ ->
+                    dialog.dismiss()
+                }
+                show()
+            }
+        }, hour, minute, true).show()
     }
 }
