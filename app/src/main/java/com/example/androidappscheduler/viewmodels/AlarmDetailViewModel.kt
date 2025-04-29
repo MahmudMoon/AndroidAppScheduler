@@ -36,7 +36,7 @@ class AlarmDetailViewModel @Inject constructor(
     val alarmUpdated: LiveData<Boolean>
         get() = _alarmUpdated
 
-    private val _successfullyStoredAlarm = MutableLiveData<Boolean>(false)
+    private val _successfullyStoredAlarm = MutableLiveData<Boolean>()
     val successfullyStoredAlarm: LiveData<Boolean>
         get() = _successfullyStoredAlarm
 

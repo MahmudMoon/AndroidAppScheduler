@@ -26,19 +26,20 @@ class MainActivityViewModel @Inject constructor(
     private val alarmRepo: AlarmRepo
 ) : ViewModel() {
 
-    private val _installedAppListState = MutableLiveData<List<PackageInstance>>(emptyList())
+    private val _installedAppListState = MutableLiveData<List<PackageInstance>>()
     val installedAppList: LiveData<List<PackageInstance>>
         get() = _installedAppListState
 
-    private val _successfullyStoredAlarm = MutableLiveData<Boolean>(false)
+    private val _successfullyStoredAlarm = MutableLiveData<Boolean>()
     val successfullyStoredAlarm: LiveData<Boolean>
         get() = _successfullyStoredAlarm
 
-    init {
-        viewModelScope.launch {
-            getInstalledApps()
-        }
-    }
+//    init {
+//        viewModelScope.launch {
+//            Log.d(TAG, "init: Calling getInstalledApp()")
+//            getInstalledApps()
+//        }
+//    }
 
     fun saveAlarm(context: Context, uniqueRequestCode: Int, packageName: String, alarmTime: Long) {
         CoroutineScope(Dispatchers.IO).launch {
@@ -56,11 +57,13 @@ class MainActivityViewModel @Inject constructor(
     }
 
     fun getInstalledApps() {
+        Log.d(TAG, "getInstalledApps: CAlled .")
         CoroutineScope(Dispatchers.IO).launch {
             val installedApps = ArrayList<PackageInstance>()
             installedAppRepository.getInstalledApps().collect() { data ->
                 installedApps.add(data)
             }
+            Log.d(TAG, "getInstalledApps: ${installedApps.size}")
             _installedAppListState.postValue(installedApps)
         }
     }

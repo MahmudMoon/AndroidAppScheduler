@@ -2,7 +2,7 @@ package com.example.androidappscheduler.ui
 
 import android.Manifest
 import android.app.AlarmManager
-import android.app.ComponentCaller
+import android.app.AlertDialog
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
@@ -11,7 +11,6 @@ import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.viewModels
-import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
@@ -25,6 +24,7 @@ import com.example.androidappscheduler.utils.Constants.openAlarmDialog
 import com.example.androidappscheduler.viewmodels.MainActivityViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
+import kotlin.math.abs
 
 private const val TAG = "MainActivity"
 
@@ -47,10 +47,6 @@ class MainActivity : AppCompatActivity() {
         toolbar = findViewById(R.id.toolbar)
         setSupportActionBar(toolbar)
         supportActionBar?.title = "Installed Apps"
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            checkAlarmPermission()
-        }
 
         installedPackageAdapter = InstalledPackageAdapter(this, emptyList()) { packageName ->
             //launchApp(packageName)
@@ -98,91 +94,184 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-    @RequiresApi(Build.VERSION_CODES.S)
-    private fun checkAlarmPermission() {
-          {
-            Log.d(TAG, "checkAlarmPermission: Permission granted")
-        }
-    }
-
-    override fun onActivityResult(
+    override fun onRequestPermissionsResult(
         requestCode: Int,
-        resultCode: Int,
-        data: Intent?,
-        caller: ComponentCaller
+        permissions: Array<out String>,
+        grantResults: IntArray
     ) {
-        super.onActivityResult(requestCode, resultCode, data, caller)
-        if (requestCode == 104 || resultCode == 105) {
-            if (resultCode == RESULT_OK) {
-                Log.d(TAG, "onActivityResult: Permission granted")
-                onStart()
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == 104) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Log.d(TAG, "onRequestPermissionsResult: Permission granted 104")
+                if (requestForPermissions()) {
+                    mainActivityViewModel.getInstalledApps()
+                }
             } else {
-                Log.d(TAG, "onActivityResult: Permission denied")
-                finish()
+                Log.d(TAG, "onRequestPermissionsResult: Permission denied 104")
+                // requestForPermissions()
+            }
+        } else if (requestCode == 105) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Log.d(TAG, "onRequestPermissionsResult: Permission granted 105")
+                if (requestForPermissions()) {
+                    mainActivityViewModel.getInstalledApps()
+                }
+            } else {
+                Log.d(TAG, "onRequestPermissionsResult: Permission denied 105")
+                // requestForPermissions()
             }
         }
     }
 
-    private fun setAlarmForPackage(packageName: String, alarmTime: Long) {
-        val uniqueRequestCode = System.currentTimeMillis().hashCode()
-        mainActivityViewModel.saveAlarm(this@MainActivity, uniqueRequestCode, packageName, alarmTime)
-        Log.d(TAG, "setAlarmForPackage: $packageName RequestCode: $uniqueRequestCode")
-        mainActivityViewModel.getInstalledApps()
+    private fun requestPermissionAskingDialog(title: String, message: String, intent: Intent? = null, task: ()->Unit = {}) {
+        AlertDialog.Builder(this)
+            .setTitle(title)
+            .setCancelable(false)
+            .setMessage(message)
+            .setPositiveButton("OK") { _, _ ->
+                if(intent!=null)
+                    startActivity(intent)
+                else
+                    task()
+
+            }
+            .setNegativeButton("Cancel") { dialog, _ ->
+                dialog.dismiss()
+                alertUserRegardingPermission(intent, task)
+            }
+            .setOnDismissListener {
+            }.show()
+
     }
 
-    private fun requestOverlayPermission() {
-        val intent = Intent(
-            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-            ("package:$packageName").toUri()
-        )
-        startActivityForResult(intent, 106)
+    private fun alertUserRegardingPermission(intent: Intent?, task: () -> Unit = {}) {
+        AlertDialog.Builder(this)
+            .setTitle("Alert !!")
+            .setMessage("Please allow permissions to continue this app")
+            .setCancelable(false)
+            .setPositiveButton("OK") { _, _ ->
+                if(intent!=null)
+                    startActivity(intent)
+                else
+                    task()
+            }
+            .setNegativeButton("Cancel") { dialog, _ ->
+                dialog.dismiss()
+            }
+            .setOnDismissListener {
+
+            }.show()
     }
 
+    private fun requestForPermissions(): Boolean {
 
-    override fun onStart() {
-        super.onStart()
-        Log.d(TAG, "onStart: ")
-
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             if (!alarmManager.canScheduleExactAlarms()) {
-                Intent().also {
-                    it.action = Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM
-                    startActivity(it)
+                Log.d(
+                    TAG,
+                    "requestForPermissions: CHECKING canScheduleExactAlarms: ${alarmManager.canScheduleExactAlarms()}"
+                )
+
+                val intent = Intent()
+                intent.action = Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM
+                requestPermissionAskingDialog(
+                    "Alert !!",
+                    "Please allow permission to set alarm",
+                    intent
+                )
+                return false
+            } else if (ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.SYSTEM_ALERT_WINDOW
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                if (!Settings.canDrawOverlays(this)) {
+                    Log.d(
+                        TAG,
+                        "requestForPermissions: Settings canDrawOverlays: ${
+                            Settings.canDrawOverlays(this)
+                        }"
+                    )
+
+                    val intent = Intent(
+                        Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                        ("package:$packageName").toUri()
+                    )
+
+                    requestPermissionAskingDialog(
+                        "Alert !!",
+                        "Please allow Overlay permission open app from background",
+                        intent
+                    )
+                    return false
                 }
-            }else if (ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.SCHEDULE_EXACT_ALARM
-            ) != PackageManager.PERMISSION_GRANTED
-                    ) {
+            } else if (ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.SCHEDULE_EXACT_ALARM
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                Log.d(
+                    TAG,
+                    "requestForPermissions: requestForPermissions: 104 SCHEDULE EXACT ALARM"
+                )
                 ActivityCompat.requestPermissions(
                     this@MainActivity,
                     arrayOf(Manifest.permission.SCHEDULE_EXACT_ALARM),
                     104
                 )
+                return false
             }
         }
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(
                     this,
                     Manifest.permission.POST_NOTIFICATIONS
                 ) != PackageManager.PERMISSION_GRANTED
             ) {
-                ActivityCompat.requestPermissions(
-                    this@MainActivity,
-                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
-                    105
+                Log.d(
+                    TAG,
+                    "requestForPermissions: requestForPermissions:  105 POST NOTIFICATION"
                 )
-            } else {
-                Log.d(TAG, "onStart: Permission granted")
+
+                requestPermissionAskingDialog("Alert !!",
+                    "Please allow permission to show notification",
+                    null,
+                ) {
+                    ActivityCompat.requestPermissions(
+                        this@MainActivity,
+                        arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                        105
+                    )
+                }
+                return false
             }
         }
+        Log.d(TAG, "requestForPermissions: ALL permissions granted")
+        return true
+    }
 
-        if(!Settings.canDrawOverlays(this)){
-            requestOverlayPermission()
-        }
-        mainActivityViewModel.getInstalledApps()
+    private fun setAlarmForPackage(packageName: String, alarmTime: Long) {
+        val uniqueRequestCode = abs(System.currentTimeMillis().hashCode())
+        mainActivityViewModel.saveAlarm(
+            this@MainActivity,
+            uniqueRequestCode,
+            packageName,
+            alarmTime
+        )
+        Log.d(TAG, "setAlarmForPackage: $packageName RequestCode: $uniqueRequestCode")
     }
 
 
+    override fun onResume() {
+        super.onResume()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        Log.d(TAG, "onStart: ")
+        if (requestForPermissions()) {
+            mainActivityViewModel.getInstalledApps()
+        }
+    }
 }

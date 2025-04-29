@@ -20,6 +20,7 @@ import com.example.androidappscheduler.utils.Constants.openAlarmDialog
 import com.example.androidappscheduler.viewmodels.AlarmDetailViewModel
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import dagger.hilt.android.AndroidEntryPoint
+import kotlin.math.abs
 
 
 private const val TAG = "AlarmDetailActivity"
@@ -148,10 +149,9 @@ class AlarmDetailActivity : AppCompatActivity() {
     }
 
     private fun setAlarmForPackage(packageName: String, alarmTime: Long) {
-        val uniqueRequestCode = System.currentTimeMillis().hashCode()
-        alarmDetailViewModel.saveAlarm(this@AlarmDetailActivity, uniqueRequestCode, packageName, alarmTime)
+        val uniqueRequestCode = abs(System.currentTimeMillis().hashCode())
         Log.d(TAG, "setAlarmForPackage: $packageName RequestCode: $uniqueRequestCode")
-       // mainActivityViewModel.getInstalledApps()
+        alarmDetailViewModel.saveAlarm(this@AlarmDetailActivity, uniqueRequestCode, packageName, alarmTime)
     }
 
     override fun onStart() {
