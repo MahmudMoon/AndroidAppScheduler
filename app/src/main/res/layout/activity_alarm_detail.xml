@@ -39,7 +39,6 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="com.example.demo.app"
-            android:textColor="#504E4E"
             app:layout_constraintTop_toBottomOf="@+id/tv_app_name_detail" />
 
         <androidx.recyclerview.widget.RecyclerView
@@ -59,13 +58,13 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="16dp"
-            android:backgroundTint="@null"
             android:contentDescription="@string/add_alarms"
             android:src="@drawable/baseline_alarm_add_48"
             app:layout_anchorGravity="bottom|end"
             app:layout_behavior="com.google.android.material.behavior.HideBottomViewOnScrollBehavior"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintRight_toRightOf="parent" />
+            app:layout_constraintRight_toRightOf="parent"
+            />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

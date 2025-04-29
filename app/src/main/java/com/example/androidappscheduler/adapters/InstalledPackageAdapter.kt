@@ -31,12 +31,12 @@ class InstalledPackageAdapter(
         holder.packageNameTextView.setOnClickListener {
             packageClicked(packageInstances[position].packageName)
         }
-        var color = "#000000".toColorInt();
+        //var color = "#000000".toColorInt();
         if(packageInstances[position].alarms.isNotEmpty()) {
             packageInstances[position].alarms.filter { !it.isLaunched }.apply {
                 if (this.isNotEmpty()) {
                     holder.alarmImage.setImageResource(R.drawable.baseline_alarm_24)
-                    color = "#056b11".toColorInt()
+                    //color = "#056b11".toColorInt()
                 } else {
                     holder.alarmImage.setImageResource(R.drawable.baseline_alarm_off_24)
                 }
@@ -45,7 +45,7 @@ class InstalledPackageAdapter(
         } else {
             holder.alarmImage.visibility = View.INVISIBLE
         }
-        holder.packageNameTextView.setTextColor(color)
+        //holder.packageNameTextView.setTextColor(color)
 
         holder.alarmImage.setOnClickListener{
             alarmDetailClicked(packageInstances[position].packageName)

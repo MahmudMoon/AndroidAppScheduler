@@ -6,4 +6,13 @@
     <color name="colorPrimary">#6200EE</color>
     <color name="colorPrimaryVariant">#3700B3</color>
     <color name="colorOnPrimary">#FFFFFF</color>
+
+    <color name="colorSecondary">#03DAC5</color>
+    <color name="colorOnSecondary">#000000</color>
+    <color name="colorBackground">#FFFFFF</color>
+
+    <color name = "textColor">#000000</color>
+
+    <color name="iconColor">#3B187C</color>
+
 </resources>

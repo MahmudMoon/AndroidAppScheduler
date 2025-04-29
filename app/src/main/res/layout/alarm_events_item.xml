@@ -24,24 +24,31 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:padding="4dp">
+                android:padding="4dp"
+                android:gravity="end">
 
                 <ImageButton
                     android:id="@+id/ib_edit_grid_adapter"
-                    android:layout_width="0dp"
-                    android:layout_weight="0.5"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:background="@null"
                     android:contentDescription="edit"
+                    android:paddingLeft="10dp"
+                    android:paddingRight="10dp"
+                    android:paddingTop="0dp"
+                    android:paddingBottom="10dp"
                     android:src="@drawable/baseline_edit_calendar_24"
                     />
 
                 <ImageButton
                     android:id="@+id/ib_delete_grid_adapter"
-                    android:layout_width="0dp"
-                    android:layout_weight="0.5"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:background="@null"
+                    android:paddingLeft="10dp"
+                    android:paddingRight="10dp"
+                    android:paddingTop="0dp"
+                    android:paddingBottom="10dp"
                     android:contentDescription="@string/edit"
                     android:src="@drawable/baseline_delete_24" />
             </LinearLayout>
@@ -65,8 +72,8 @@
                     android:layout_height="wrap_content"
                     android:gravity="center"
                     android:text="18:56"
-                    android:textColor="#000"
-                    android:textSize="18sp"
+                    android:textColor="@color/textColor"
+                    android:textAppearance="@style/TextAppearance.AppCompat.Widget.ActionBar.Subtitle"
                     android:textStyle="bold"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
@@ -80,8 +87,8 @@
                     android:layout_height="wrap_content"
                     android:gravity="center"
                     android:text="Launched: False"
-                    android:textColor="#000"
-                    android:textSize="12sp"
+                    android:textColor="@color/textColor"
+                    android:textAppearance="@style/TextAppearance.AppCompat.Caption"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
